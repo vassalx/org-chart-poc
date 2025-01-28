@@ -20,9 +20,12 @@ const OrganizationalChart = (props: OrganizationalChartProps) => {
   const d3Container = useRef(null);
   const [cardShow, setCardShow] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
+  const [jsonData, setJsonData] = useState<EmployeeData[]>(data);
   const chart = new OrgChart<EmployeeData>();
 
-  const employeeWithId = data.find((employee) => employee.id === employeeId);
+  const employeeWithId = jsonData.find(
+    (employee) => employee.id === employeeId
+  );
 
   const handleShow = () => setCardShow(true);
   const handleClose = () => setCardShow(false);
@@ -32,10 +35,10 @@ const OrganizationalChart = (props: OrganizationalChartProps) => {
       handleShow();
       setEmployeeId(nodeId);
     };
-    if (data && d3Container.current) {
+    if (jsonData && d3Container.current) {
       chart
         .container(d3Container.current)
-        .data(data)
+        .data(jsonData)
         .nodeWidth(() => 300)
         .nodeHeight(() => 140)
         .compactMarginBetween(() => 80)
@@ -64,7 +67,10 @@ const OrganizationalChart = (props: OrganizationalChartProps) => {
         .linkUpdate(function (this: string, node) {
           d3.select(this)
             .attr("stroke", "#227c9d")
-            .attr("stroke-dasharray", getStrokeDasharrayForLineType(node.data._lineType))
+            .attr(
+              "stroke-dasharray",
+              getStrokeDasharrayForLineType(node.data._lineType)
+            )
             .attr("stroke-width", 1);
         })
         .expandAll()
@@ -72,7 +78,7 @@ const OrganizationalChart = (props: OrganizationalChartProps) => {
         .render();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [jsonData]);
 
   const onClickExportCurrentImg = () => {
     chart.exportImg();
@@ -90,18 +96,42 @@ const OrganizationalChart = (props: OrganizationalChartProps) => {
     downloadPdf(chart);
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const result = e.target?.result as string;
+          const parsedData = JSON.parse(result);
+          setJsonData(parsedData);
+        } catch (error) {
+          console.error("Error parsing JSON file:", error);
+          alert("Invalid JSON file. Please upload a valid JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
     <div>
-      <div>
-        <button onClick={onClickExportCurrentImg}>Export Current</button>
-        <button onClick={onClickExportFullImg}>Export Full</button>
-        <button onClick={onClickExportSvg}>Export SVG</button>
-        <button onClick={onClickExportPdf}>Export PDF</button>
+      <div className="org-chart-controls">
+        <div>
+          <span>Upload JSON:</span>
+          <input type="file" accept=".json" onChange={handleFileChange} />
+        </div>
+        <div>
+          <button onClick={onClickExportCurrentImg}>Export Current</button>
+          <button onClick={onClickExportFullImg}>Export Full</button>
+          <button onClick={onClickExportSvg}>Export SVG</button>
+          <button onClick={onClickExportPdf}>Export PDF</button>
+        </div>
       </div>
       <div className="org-chart" ref={d3Container}>
         {cardShow && employeeWithId && (
           <EmployeeDetailsCard
-            employees={data}
+            employees={jsonData}
             employee={employeeWithId}
             handleClose={handleClose}
           />
