@@ -1,6 +1,7 @@
 # d3-org-chart usage proof of concept
 
 In this example d3-org-chart library is used to draw an org chart from json-type data and export it as png, svg and pdf files.
+By default mocked data is displayed. And example of import JSON file is in the src/assets/upload-test.json.
 
 ### Used
 - d3
